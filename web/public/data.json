@@ -177,13 +177,6 @@
               "id": "tech_scavenger"
             },
             {
-              "title": "一个人的产品",
-              "url": "https://t.me/solo_product",
-              "countStr": "92",
-              "desc": "独立开发者、产品设计与运营经验",
-              "id": "solo_product"
-            },
-            {
               "title": "深夜博客",
               "url": "https://t.me/late_night_blog",
               "countStr": "46",
@@ -191,39 +184,11 @@
               "id": "late_night_blog"
             },
             {
-              "title": "什么值得看",
-              "url": "https://t.me/worth_read",
-              "countStr": "101",
-              "desc": "推荐值得一读的好文章与好书",
-              "id": "worth_read"
-            },
-            {
-              "title": "程序员日常",
-              "url": "https://t.me/dev_everyday",
-              "countStr": "67",
-              "desc": "程序员的日常工作、吐槽与经验分享",
-              "id": "dev_everyday"
-            },
-            {
               "title": "小众软件",
               "url": "https://t.me/niche_software",
               "countStr": "157",
               "desc": "发现与分享好用、新奇的小众软件",
               "id": "niche_software"
-            },
-            {
-              "title": "酱酱の日报",
-              "url": "https://t.me/jiangdaily",
-              "countStr": "189",
-              "desc": "每天不只是新闻，更是酱酱的发现日常～ 精选有趣、有料、有灵魂的「热饭」",
-              "id": "jiangdaily"
-            },
-            {
-              "title": "财经速报",
-              "url": "https://t.me/econ_news_cn",
-              "countStr": "132",
-              "desc": "最新最快的财经新闻与市场动态资讯",
-              "id": "econ_news_cn"
             },
             {
               "title": "AI 工具情报局",
