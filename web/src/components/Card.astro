@@ -21,6 +21,7 @@ const username = getTelegramUsername(url);
 const avatarUrl = username ? `https://unavatar.io/telegram/${username}` : '';
 const firstLetter = title ? title.substring(0, 1).toUpperCase() : '?';
 const colorClass = getAvatarColorClass(firstLetter);
+const countLabel = typeName === '频道' ? '订阅' : typeName === '群组' ? '成员' : '人数';
 ---
 
 <article class="card" data-title={title} data-desc={desc} data-url={url} data-category={category}>
@@ -28,7 +29,7 @@ const colorClass = getAvatarColorClass(firstLetter);
         <div class={`card-icon ${colorClass}`} aria-hidden="true">
             {firstLetter}
             {avatarUrl && (
-                <img src={avatarUrl} loading="lazy" decoding="async" alt={username} onerror="this.style.display='none'" />
+                <img src={avatarUrl} loading="lazy" decoding="async" alt="" onerror="this.style.display='none'" />
             )}
         </div>
         <div class="card-title-wrap">
@@ -36,14 +37,14 @@ const colorClass = getAvatarColorClass(firstLetter);
             <div class="card-meta">
                 <span class="tag">{typeName}</span>
                 {category && <span class="tag category-tag" title={category}>{category}</span>}
-                <span class="resource-count">人数 {countStr}</span>
+                <span class="resource-count">{countLabel} {countStr}</span>
             </div>
         </div>
     </div>
     <div class="card-desc" title={desc}>{desc || '暂无简介'}</div>
     <div class="card-actions">
-        <a class="card-action" href={`/p/${id}/`}>详情</a>
-        <a class="card-action card-action-primary" href={url} target="_blank" rel="noopener noreferrer">打开</a>
+        <a class="card-action" href={`/p/${id}/`}>查看详情 <span aria-hidden="true">→</span></a>
+        <a class="card-action card-action-primary" href={url} target="_blank" rel="noopener noreferrer">打开 Telegram <span aria-hidden="true">↗</span></a>
         <button class="card-action card-copy-btn" type="button" aria-label="复制链接" data-url={url}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

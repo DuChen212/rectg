@@ -200,7 +200,7 @@ function createCard(item, matches = {}) {
         img.src = `https://unavatar.io/telegram/${username}`;
         img.loading = 'lazy';
         img.decoding = 'async';
-        img.alt = username;
+        img.alt = '';
         img.addEventListener('error', () => {
             icon.textContent = firstLetter;
         });
@@ -232,7 +232,8 @@ function createCard(item, matches = {}) {
 
     const count = document.createElement('span');
     count.className = 'resource-count';
-    count.textContent = `人数 ${item.countStr || '-'}`;
+    const countLabel = item.typeName === '频道' ? '订阅' : item.typeName === '群组' ? '成员' : '人数';
+    count.textContent = `${countLabel} ${item.countStr || '-'}`;
     meta.append(tag, categoryTag, count);
     titleWrap.append(titleLink, meta);
     header.append(icon, titleWrap);
@@ -250,12 +251,18 @@ function createCard(item, matches = {}) {
     directLink.href = url;
     directLink.target = '_blank';
     directLink.rel = 'noopener noreferrer';
-    directLink.textContent = '打开';
+    const directLinkArrow = document.createElement('span');
+    directLinkArrow.textContent = '↗';
+    directLinkArrow.setAttribute('aria-hidden', 'true');
+    directLink.append('打开 Telegram ', directLinkArrow);
 
     const detailLink = document.createElement('a');
     detailLink.className = 'card-action';
     detailLink.href = `/p/${item.id}/`;
-    detailLink.textContent = '详情';
+    const detailLinkArrow = document.createElement('span');
+    detailLinkArrow.textContent = '→';
+    detailLinkArrow.setAttribute('aria-hidden', 'true');
+    detailLink.append('查看详情 ', detailLinkArrow);
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'card-action card-copy-btn';
@@ -283,7 +290,13 @@ function renderCards(items, matchMap = new Map()) {
 
 function setActiveNav(id) {
     document.querySelectorAll('.nav-item, .mobile-category-item').forEach((item) => {
-        item.classList.toggle('active', item.dataset.id === id);
+        const isActive = item.dataset.id === id;
+        item.classList.toggle('active', isActive);
+        if (isActive) {
+            item.setAttribute('aria-current', 'page');
+        } else {
+            item.removeAttribute('aria-current');
+        }
     });
 }
 
@@ -309,7 +322,7 @@ function updateUrl({ sectionId, query, replace = false }) {
 
 function getSectionDescription(section) {
     if (!section) return '';
-    if (section.id === 'featured') return '从全站目录选出的一组入口，按主题分布和人数参考整理。';
+    if (section.id === 'featured') return `首页列出 ${section.items?.length || 0} 个条目作为浏览入口，不代表推荐或排名。`;
     const keywords = section.keywords ? `，关联关键词：${section.keywords}` : '';
     return `${section.items?.length || 0} 个资源，按订阅或成员数排序${keywords}。`;
 }
@@ -437,7 +450,12 @@ function initTheme() {
     const themeMeta = document.getElementById('theme-color-meta');
 
     function syncThemeMeta() {
-        themeMeta?.setAttribute('content', document.body.classList.contains('dark') ? '#111418' : '#ffffff');
+        const isDark = document.body.classList.contains('dark');
+        const label = isDark ? '切换到浅色主题' : '切换到深色主题';
+        themeMeta?.setAttribute('content', isDark ? '#0e141b' : '#f7f8fa');
+        themeToggle?.setAttribute('aria-pressed', String(isDark));
+        themeToggle?.setAttribute('aria-label', label);
+        themeToggle?.setAttribute('title', label);
     }
 
     document.body.classList.toggle('dark', savedTheme === 'dark' || (!savedTheme && prefersDark));
@@ -452,21 +470,72 @@ function initTheme() {
 }
 
 function initSidebar() {
+    const mobileSidebarQuery = window.matchMedia('(max-width: 768px)');
+    let focusReturnTarget = null;
+
+    function syncSidebarAccessibility(isOpen = sidebar?.classList.contains('open') || false) {
+        const isMobile = mobileSidebarQuery.matches;
+        const isExposed = !isMobile || isOpen;
+
+        sidebar?.setAttribute('aria-hidden', String(!isExposed));
+        sidebar?.toggleAttribute('inert', !isExposed);
+        menuBtn?.setAttribute('aria-expanded', String(isMobile && isOpen));
+        menuBtn?.setAttribute('aria-label', isMobile && isOpen ? '关闭分类菜单' : '打开分类菜单');
+    }
+
     function openSidebar() {
+        if (!mobileSidebarQuery.matches) return;
+        focusReturnTarget = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : menuBtn;
         sidebar?.classList.add('open');
         sidebarOverlay?.classList.add('open');
         document.body.style.overflow = 'hidden';
+        syncSidebarAccessibility(true);
+        closeSidebarBtn?.focus();
     }
 
-    function closeSidebar() {
+    function closeSidebar({ restoreFocus = true } = {}) {
+        const wasOpen = sidebar?.classList.contains('open') || false;
+        if (wasOpen && restoreFocus && mobileSidebarQuery.matches) {
+            const target = focusReturnTarget instanceof HTMLElement && focusReturnTarget.isConnected
+                ? focusReturnTarget
+                : menuBtn;
+            target?.focus();
+        }
         sidebar?.classList.remove('open');
         sidebarOverlay?.classList.remove('open');
         document.body.style.overflow = '';
+        syncSidebarAccessibility(false);
+        focusReturnTarget = null;
     }
 
     menuBtn?.addEventListener('click', openSidebar);
     closeSidebarBtn?.addEventListener('click', closeSidebar);
     sidebarOverlay?.addEventListener('click', closeSidebar);
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !sidebar?.classList.contains('open')) return;
+        event.preventDefault();
+        closeSidebar();
+    });
+
+    const handleViewportChange = () => {
+        if (!mobileSidebarQuery.matches) {
+            closeSidebar({ restoreFocus: false });
+        } else {
+            if (sidebar?.contains(document.activeElement)) {
+                menuBtn?.focus();
+            }
+            syncSidebarAccessibility(sidebar?.classList.contains('open') || false);
+        }
+    };
+    if (typeof mobileSidebarQuery.addEventListener === 'function') {
+        mobileSidebarQuery.addEventListener('change', handleViewportChange);
+    } else {
+        mobileSidebarQuery.addListener(handleViewportChange);
+    }
+    handleViewportChange();
 
     document.querySelectorAll('.nav-item, .mobile-category-item').forEach((item) => {
         item.addEventListener('click', (event) => {

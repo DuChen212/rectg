@@ -10,8 +10,18 @@ function safeSetStorage(key, value) {
 
 let toastTimeout;
 
-function showToast(message) {
+function getAccessibleToast() {
     const toast = document.getElementById('toast');
+    if (!toast) return null;
+
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.setAttribute('aria-atomic', 'true');
+    return toast;
+}
+
+function showToast(message) {
+    const toast = getAccessibleToast();
     if (!toast) return;
 
     toast.textContent = message;
@@ -55,7 +65,12 @@ function initTheme() {
     const themeMeta = document.getElementById('theme-color-meta');
 
     function syncThemeMeta() {
-        themeMeta?.setAttribute('content', document.body.classList.contains('dark') ? '#111418' : '#ffffff');
+        const isDark = document.body.classList.contains('dark');
+        const label = isDark ? '切换到浅色主题' : '切换到深色主题';
+        themeMeta?.setAttribute('content', isDark ? '#0e141b' : '#f7f8fa');
+        themeToggle?.setAttribute('aria-pressed', String(isDark));
+        themeToggle?.setAttribute('aria-label', label);
+        themeToggle?.setAttribute('title', label);
     }
 
     syncThemeMeta();
@@ -88,6 +103,7 @@ function initCopyButtons() {
 }
 
 function init() {
+    getAccessibleToast();
     initTheme();
     initCopyButtons();
 }

@@ -1,11 +1,11 @@
 {
-    "name": "rectg - Telegram 精选导航",
+    "name": "rectg - Telegram 中文资源目录",
     "short_name": "rectg",
-    "description": "Telegram 优质中文频道与群组导航",
+    "description": "公开 Telegram 中文频道与群组目录",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#f5f6fa",
-    "theme_color": "#2997ff",
+    "background_color": "#f7f8fa",
+    "theme_color": "#229ed9",
     "icons": [
         {
             "src": "/og-image.png",

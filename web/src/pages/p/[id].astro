@@ -11,7 +11,7 @@ import {
 } from '../../utils/data';
 
 export async function getStaticPaths() {
-    return getItemPaths();
+  return getItemPaths();
 }
 
 const {
@@ -26,7 +26,9 @@ const {
 const username = getTelegramUsername(item.url);
 const avatarUrl = username ? `https://unavatar.io/telegram/${username}` : '';
 const firstLetter = item.title ? item.title.substring(0, 1).toUpperCase() : '?';
-const subscriberCount = item.countStr || '0';
+const subscriberCount = item.countStr || '暂无数据';
+const countLabel = typeName === '频道' ? '订阅' : typeName === '群组' ? '成员' : '人数';
+const telegramLabel = username ? `@${username}` : item.url;
 const pickText = (...values) =>
   values
     .map(value => (typeof value === 'string' ? value.trim() : ''))
@@ -39,7 +41,7 @@ const colorClass = getAvatarColorClass(firstLetter);
 const pageTitle = `${item.title} - rectg`;
 const pageDescription = item.desc
   ? item.desc.slice(0, 120)
-  : `${item.title} 的 Telegram ${typeName}详情，包含分类、人数和 Telegram 链接。`;
+  : `${item.title} 的基本信息、所属分类和 Telegram 入口。`;
 const detailPath = itemPath(item.id);
 const detailUrl = absoluteUrl(detailPath);
 const detailJsonLd = [
@@ -111,18 +113,22 @@ const detailJsonLd = [
 <Layout title={pageTitle} description={pageDescription} canonicalPath={detailPath} ogType="article" jsonLd={detailJsonLd}>
   <div id="detail-app" class="detail-page">
     <header class="detail-topbar">
-      <a class="detail-brand" href="/">rectg</a>
+      <a class="detail-brand" href="/" aria-label="rectg 首页">
+        <span class="detail-brand-mark" aria-hidden="true">r</span>
+        <span>rectg</span>
+      </a>
+
       <div class="detail-top-actions">
-        <nav class="detail-topnav" aria-label="详情页导航">
+        <nav class="detail-topnav" aria-label="主导航">
           <a href="/">目录</a>
-          <a href={categoryHref}>同分类</a>
-          <a href="https://github.com/jackvale/rectg" target="_blank" rel="noopener">源码</a>
+          <a class="category-nav-link" href={categoryHref}>{resolvedCategoryName}</a>
+          <a class="source-nav-link" href="https://github.com/jackvale/rectg" target="_blank" rel="noopener">源码</a>
         </nav>
         <button id="theme-toggle" class="detail-theme-btn" type="button" aria-label="切换主题">
-          <svg class="moon-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="moon-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
-          <svg class="sun-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="sun-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -140,36 +146,69 @@ const detailJsonLd = [
     <main class="detail-container">
       <nav class="breadcrumb" aria-label="面包屑">
         <a href="/">首页</a>
-        <span>/</span>
+        <span aria-hidden="true">/</span>
         <a href={categoryHref}>{resolvedCategoryName}</a>
+        <span aria-hidden="true">/</span>
+        <span class="breadcrumb-current" aria-current="page">{item.title}</span>
       </nav>
 
-      <article class="detail-panel">
-        <header class="detail-header">
-          <div class="resource-avatar" aria-hidden="true">
-            <div class={`resource-avatar-fallback ${colorClass}`}>{firstLetter}</div>
-            {avatarUrl && (
-              <img
-                src={avatarUrl}
-                alt=""
-                class="resource-avatar-image"
-                loading="eager"
-                decoding="async"
-                onerror="this.style.display='none'"
-              />
-            )}
-          </div>
-
-          <div class="header-info">
-            <div class="resource-meta-line">
-              <span>{typeName}</span>
-              <span title={resolvedCategoryFullName}>{resolvedCategoryName}</span>
-              {username && <span>@{username}</span>}
+      <div class="detail-grid">
+        <article class="resource-card">
+          <header class="resource-header">
+            <div class="resource-avatar" aria-hidden="true">
+              <div class={`resource-avatar-fallback ${colorClass}`}>{firstLetter}</div>
+              {avatarUrl && (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  class="resource-avatar-image"
+                  loading="eager"
+                  decoding="async"
+                  onerror="this.style.display='none'"
+                />
+              )}
             </div>
-            <h1 class="detail-title">{item.title}</h1>
-            <dl class="summary-list" aria-label="资源资料">
+
+            <div class="resource-identity">
+              <p class="resource-kicker">
+                <span>{typeName}</span>
+                {username && <span>@{username}</span>}
+              </p>
+              <h1>{item.title}</h1>
+            </div>
+          </header>
+
+          <section class="resource-copy" aria-labelledby="description-heading">
+            <h2 id="description-heading">简介</h2>
+            <p class:list={["resource-description", { "is-empty": !item.desc }]}>
+              {item.desc || '暂无简介。你可以通过下方链接前往 Telegram 查看该资源。'}
+            </p>
+          </section>
+
+          <div class="detail-actions" aria-label="资源操作">
+            <a href={item.url} target="_blank" rel="noopener noreferrer" class="action-btn action-primary">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                <path d="M22 2 11 13"></path>
+              </svg>
+              打开 Telegram
+            </a>
+            <button type="button" class="action-btn copy-btn" data-copy-url={item.url}>
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              复制链接
+            </button>
+          </div>
+        </article>
+
+        <aside class="detail-sidebar" aria-label="资源补充信息">
+          <section class="sidebar-section info-section" aria-labelledby="info-heading">
+            <h2 id="info-heading">资源信息</h2>
+            <dl class="resource-info">
               <div>
-                <dt>人数</dt>
+                <dt>{countLabel}</dt>
                 <dd>{subscriberCount}</dd>
               </div>
               <div>
@@ -178,103 +217,69 @@ const detailJsonLd = [
               </div>
               <div>
                 <dt>分类</dt>
-                <dd title={resolvedCategoryFullName}>{resolvedCategoryName}</dd>
+                <dd><a href={categoryHref} title={resolvedCategoryFullName}>{resolvedCategoryName}</a></dd>
+              </div>
+              <div>
+                <dt>Telegram</dt>
+                <dd><a class="telegram-link" href={item.url} target="_blank" rel="noopener noreferrer" title={item.url}>{telegramLabel}</a></dd>
               </div>
             </dl>
-          </div>
-        </header>
+          </section>
 
-        <div class="detail-actions" aria-label="资源操作">
-          <a href={item.url} target="_blank" rel="noopener noreferrer" class="action-btn action-primary">
-            打开 Telegram
-          </a>
-          <button type="button" class="action-btn copy-btn" data-copy-url={item.url}>
-            复制
-          </button>
-          <a href={categoryHref} class="action-btn">
-            同分类
-          </a>
-          <a href="/" class="action-btn">
-            目录
-          </a>
-        </div>
-
-        <section class="detail-section resource-answer-section">
-          <h2 class="section-title">资料</h2>
-          <dl class="resource-facts">
-            <div>
-              <dt>名称</dt>
-              <dd>{item.title}</dd>
-            </div>
-            <div>
-              <dt>类型</dt>
-              <dd>{typeName}</dd>
-            </div>
-            <div>
-              <dt>分类</dt>
-              <dd>{resolvedCategoryName}</dd>
-            </div>
-            <div>
-              <dt>人数</dt>
-              <dd>{subscriberCount}</dd>
-            </div>
-            <div class="resource-fact-wide">
-              <dt>简介</dt>
-              <dd>{item.desc || '该资源暂无详细描述信息。'}</dd>
-            </div>
-            <div class="resource-fact-wide">
-              <dt>Telegram</dt>
-              <dd><a href={item.url} target="_blank" rel="noopener noreferrer">{item.url}</a></dd>
-            </div>
-          </dl>
-        </section>
-
-        {relatedItems.length > 0 && (
-          <section class="detail-section related-section">
-            <div class="section-heading-inline">
-              <h2 class="section-title">同分类目录</h2>
+          <section class="sidebar-section related-section" aria-labelledby="related-heading">
+            <div class="section-heading">
+              <h2 id="related-heading">同分类资源</h2>
               <a href={categoryHref}>查看全部</a>
             </div>
-            <div class="related-list">
-              {relatedItems.map((related) => (
-                <a class="related-card" href={`/p/${related.id}/`} title={related.title}>
-                  <span>{related.title}</span>
-                  <small>{related.typeName} · 人数 {related.countStr || '-'}</small>
-                </a>
-              ))}
-            </div>
+
+            {relatedItems.length > 0 ? (
+              <div class="related-list">
+                {relatedItems.map((related) => (
+                  <a class="related-item" href={itemPath(related.id)} title={related.title}>
+                    <span class="related-text">
+                      <strong>{related.title}</strong>
+                      <small>{related.typeName} · {related.typeName === '频道' ? '订阅' : related.typeName === '群组' ? '成员' : '人数'} {related.countStr || '暂无'}</small>
+                    </span>
+                    <span class="related-arrow" aria-hidden="true">›</span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p class="empty-related">当前分类暂无其他资源。</p>
+            )}
           </section>
+        </aside>
+      </div>
+
+      <nav class="resource-pagination" aria-label="同分类前后资源">
+        {previousItem ? (
+          <a href={itemPath(previousItem.id)} class="pagination-link pagination-previous">
+            <span>上一个</span>
+            <strong>{previousItem.title}</strong>
+          </a>
+        ) : (
+          <span class="pagination-link is-disabled">
+            <span>上一个</span>
+            <strong>已经是第一条</strong>
+          </span>
         )}
 
-        <nav class="related-nav" aria-label="同分类前后资源">
-          {previousItem ? (
-            <a href={`/p/${previousItem.id}/`} class="related-nav-link">
-              <span>上一条</span>
-              <strong>{previousItem.title}</strong>
-            </a>
-          ) : (
-            <a href={categoryHref} class="related-nav-link">
-              <span>上一条</span>
-              <strong>查看分类目录</strong>
-            </a>
-          )}
-          {nextItem ? (
-            <a href={`/p/${nextItem.id}/`} class="related-nav-link">
-              <span>下一条</span>
-              <strong>{nextItem.title}</strong>
-            </a>
-          ) : (
-            <a href={categoryHref} class="related-nav-link">
-              <span>下一条</span>
-              <strong>查看分类目录</strong>
-            </a>
-          )}
-        </nav>
-      </article>
+        {nextItem ? (
+          <a href={itemPath(nextItem.id)} class="pagination-link pagination-next">
+            <span>下一个</span>
+            <strong>{nextItem.title}</strong>
+          </a>
+        ) : (
+          <span class="pagination-link pagination-next is-disabled">
+            <span>下一个</span>
+            <strong>已经是最后一条</strong>
+          </span>
+        )}
+      </nav>
     </main>
 
     <div id="copy-toast" class="copy-toast" role="status" aria-live="polite">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
       <span>链接已复制</span>
     </div>
   </div>
@@ -288,16 +293,16 @@ const detailJsonLd = [
 
     function showCopyToast(message, isError = false) {
       if (!copyToast) return;
-      
+
       const span = copyToast.querySelector('span');
       if (span) span.textContent = message;
-      
+
       if (isError) {
         copyToast.classList.add('error');
       } else {
         copyToast.classList.remove('error');
       }
-      
+
       copyToast.classList.add('show');
       clearTimeout(copyTimer);
       copyTimer = setTimeout(() => copyToast.classList.remove('show'), 2000);
@@ -349,7 +354,7 @@ const detailJsonLd = [
 
     function syncThemeMeta() {
       if (!themeMeta) return;
-      themeMeta.setAttribute('content', document.body.classList.contains('dark') ? '#111418' : '#ffffff');
+      themeMeta.setAttribute('content', document.body.classList.contains('dark') ? '#0e141b' : '#f7f8fa');
     }
 
     syncThemeMeta();
@@ -365,159 +370,194 @@ const detailJsonLd = [
       });
     }
   </script>
-
 </Layout>
 
 <style>
   .detail-page {
+    --detail-bg: #f7f8fa;
+    --detail-surface: #ffffff;
+    --detail-soft: #f2f4f7;
+    --detail-text: #17212b;
+    --detail-muted: #667085;
+    --detail-subtle: #98a2b3;
+    --detail-border: #e4e7ec;
+    --detail-blue: #229ed9;
+    --detail-blue-hover: #1b8fc7;
+
     min-height: 100vh;
-    background: var(--bg-main);
-    color: var(--text-main);
+    background: var(--detail-bg);
+    color: var(--detail-text);
+  }
+
+  :global(body.dark) .detail-page {
+    --detail-bg: #101820;
+    --detail-surface: #17212b;
+    --detail-soft: #202d39;
+    --detail-text: #f2f4f7;
+    --detail-muted: #b4bdc8;
+    --detail-subtle: #8693a1;
+    --detail-border: #344250;
+    --detail-blue: #45afe2;
+    --detail-blue-hover: #62bce7;
   }
 
   .detail-topbar {
     position: sticky;
     top: 0;
     z-index: 50;
-    min-height: var(--header-height);
+    min-height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
     padding: 0 32px;
-    border-bottom: 1px solid var(--line);
-    background: color-mix(in srgb, var(--bg-main) 94%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--detail-border);
+    background: var(--detail-surface);
   }
 
   .detail-brand {
-    flex: 0 0 auto;
-    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--detail-text);
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 750;
+    letter-spacing: -0.01em;
   }
 
-  .detail-top-actions {
+  .detail-brand-mark {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--detail-blue);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .detail-top-actions,
+  .detail-topnav {
     min-width: 0;
     display: flex;
     align-items: center;
+  }
+
+  .detail-top-actions {
     justify-content: flex-end;
     gap: 8px;
   }
 
   .detail-topnav {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    gap: 2px;
   }
 
   .detail-topnav a,
-  .detail-theme-btn {
-    min-height: 30px;
+  .detail-topbar #theme-toggle {
+    min-height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 0;
-    border-radius: 4px;
+    border-radius: 8px;
     background: transparent;
-    color: var(--text-secondary);
-    font-size: 0.86rem;
+    color: var(--detail-muted);
+    font-size: 0.84rem;
     font-weight: 600;
-    transition: border-color 0.16s, background-color 0.16s, color 0.16s;
   }
 
   .detail-topnav a {
-    padding: 0 12px;
-    white-space: nowrap;
-  }
-
-  .detail-theme-btn {
-    width: 30px;
-    flex: 0 0 30px;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .detail-topnav a:hover,
-  .detail-theme-btn:hover {
-    color: var(--accent-strong);
-    background: var(--accent-light);
-  }
-
-  .detail-container {
-    width: 100%;
-    max-width: 960px;
-    display: block;
-    flex: none;
-    min-width: 0;
-    margin: 0 auto;
-    padding: 22px 24px 56px;
-  }
-
-  .breadcrumb {
-    width: fit-content;
-    max-width: 100%;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 12px;
-    color: var(--text-secondary);
-    font-size: 0.84rem;
-    font-weight: 650;
-  }
-
-  .breadcrumb a {
-    min-width: 0;
+    max-width: 180px;
+    padding: 0 11px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
+  .detail-topbar #theme-toggle {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .detail-topnav a:hover,
+  .detail-topbar #theme-toggle:hover {
+    background: var(--detail-soft);
+    color: var(--detail-text);
+  }
+
+  .detail-container {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+  }
+
+  .breadcrumb {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: var(--detail-subtle);
+    font-size: 0.82rem;
+  }
+
+  .breadcrumb a {
+    flex: 0 0 auto;
+    color: var(--detail-muted);
+  }
+
   .breadcrumb a:hover {
-    color: var(--accent-strong);
+    color: var(--detail-blue);
   }
 
-  .breadcrumb span {
-    color: var(--text-muted);
+  .breadcrumb-current {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--detail-subtle);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .detail-panel {
-    padding: 20px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg-card);
-    box-shadow: none;
+  .detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 24px;
   }
 
-  .detail-header {
-    position: static;
-    top: auto;
-    z-index: auto;
-    min-height: 0;
+  .resource-card,
+  .sidebar-section,
+  .pagination-link {
+    border: 1px solid var(--detail-border);
+    background: var(--detail-surface);
+  }
+
+  .resource-card {
+    min-width: 0;
+    padding: 36px;
+    border-radius: 12px;
+  }
+
+  .resource-header {
     display: flex;
     align-items: flex-start;
-    justify-content: flex-start;
-    gap: 14px;
-    margin: 0;
-    padding: 0 0 18px;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    gap: 18px;
   }
 
   .resource-avatar {
     position: relative;
-    width: 48px;
-    height: 48px;
-    flex: 0 0 48px;
+    width: 76px;
+    height: 76px;
+    flex: 0 0 76px;
     overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg-panel);
+    border: 1px solid var(--detail-border);
+    border-radius: 12px;
+    background: var(--detail-soft);
   }
 
   .resource-avatar-fallback,
@@ -530,8 +570,8 @@ const detailJsonLd = [
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 750;
   }
 
   .resource-avatar-image {
@@ -541,325 +581,310 @@ const detailJsonLd = [
     object-fit: cover;
   }
 
-  .header-info {
-    flex: 1;
+  .resource-identity {
     min-width: 0;
+    padding-top: 3px;
   }
 
-  .resource-meta-line {
+  .resource-kicker {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 6px;
-    color: var(--text-muted);
+    gap: 7px;
+    margin-bottom: 7px;
+    color: var(--detail-muted);
     font-size: 0.82rem;
-    font-weight: 600;
+    line-height: 1.4;
   }
 
-  .resource-meta-line span {
-    max-width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .resource-kicker span + span::before {
+    content: "·";
+    margin-right: 7px;
+    color: var(--detail-subtle);
   }
 
-  .resource-meta-line span + span::before {
-    content: "/";
-    margin-right: 6px;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .detail-title {
+  .resource-identity h1 {
     margin: 0;
-    color: var(--text-main);
-    font-size: 1.34rem;
-    font-weight: 700;
-    line-height: 1.25;
+    color: var(--detail-text);
+    font-size: clamp(1.65rem, 3vw, 2.1rem);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    line-height: 1.28;
     overflow-wrap: anywhere;
   }
 
-  .summary-list {
-    width: fit-content;
-    max-width: 100%;
-    display: flex;
-    flex-wrap: wrap;
+  .resource-copy {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--detail-border);
+  }
+
+  .resource-copy h2,
+  .sidebar-section h2 {
+    margin: 0;
+    color: var(--detail-text);
+    font-size: 0.96rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .resource-description {
     margin-top: 12px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    overflow: hidden;
+    color: var(--detail-muted);
+    font-size: 0.98rem;
+    line-height: 1.85;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
-  .summary-list div {
-    min-width: 126px;
-    padding: 9px 12px;
-    border-right: 1px solid var(--line);
-  }
-
-  .summary-list div:last-child {
-    border-right: 0;
-  }
-
-  .summary-list dt {
-    margin-bottom: 2px;
-    color: var(--text-muted);
-    font-size: 0.74rem;
-    font-weight: 600;
-  }
-
-  .summary-list dd {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--text-main);
-    font-size: 0.9rem;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .resource-description.is-empty {
+    color: var(--detail-subtle);
   }
 
   .detail-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin: 16px 0 20px;
+    gap: 10px;
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--detail-border);
   }
 
   .action-btn {
-    min-height: 32px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg-card);
-    color: var(--text-secondary);
+    gap: 8px;
+    padding: 0 16px;
+    border: 1px solid var(--detail-border);
+    border-radius: 8px;
+    background: var(--detail-surface);
+    color: var(--detail-text);
     cursor: pointer;
-    font-size: 0.86rem;
-    font-weight: 600;
-    transition: border-color 0.16s, background-color 0.16s, color 0.16s;
+    font-size: 0.9rem;
+    font-weight: 650;
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
   }
 
   .action-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent-strong);
+    border-color: #cbd0d8;
+    background: var(--detail-soft);
   }
 
   .action-primary {
-    border-color: var(--accent);
-    background: var(--bg-card);
-    color: var(--accent-strong);
+    border-color: var(--detail-blue);
+    background: var(--detail-blue);
+    color: #ffffff;
   }
 
   .action-primary:hover {
-    border-color: var(--accent-strong);
-    background: var(--accent-light);
-    color: var(--accent-strong);
+    border-color: var(--detail-blue-hover);
+    background: var(--detail-blue-hover);
+    color: #ffffff;
   }
 
-  body.dark .action-primary {
-    color: var(--accent-strong);
+  .detail-sidebar {
+    position: sticky;
+    top: 88px;
+    min-width: 0;
   }
 
-  .detail-section {
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
+  .sidebar-section {
+    overflow: hidden;
+    border-radius: 12px;
   }
 
-  .detail-section + .detail-section {
-    margin-top: 18px;
+  .sidebar-section + .sidebar-section {
+    margin-top: 16px;
   }
 
-  .resource-answer-section {
-    margin-top: 0;
+  .info-section > h2,
+  .section-heading {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--detail-border);
   }
 
-  .resource-facts {
+  .resource-info > div {
+    min-width: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 10px;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--detail-border);
   }
 
-  .resource-facts div {
+  .resource-info > div:last-child {
+    border-bottom: 0;
+  }
+
+  .resource-info dt {
+    color: var(--detail-subtle);
+    font-size: 0.82rem;
+  }
+
+  .resource-info dd {
     min-width: 0;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--line);
-    background: transparent;
-  }
-
-  .resource-fact-wide {
-    grid-column: 1 / -1;
-  }
-
-  .resource-facts dt {
-    margin-bottom: 4px;
-    color: var(--text-muted);
-    font-size: 0.74rem;
+    color: var(--detail-text);
+    font-size: 0.86rem;
     font-weight: 600;
-  }
-
-  .resource-facts dd {
-    min-width: 0;
-    color: var(--text-main);
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1.55;
+    text-align: right;
     overflow-wrap: anywhere;
   }
 
-  .resource-facts a {
-    color: var(--accent-strong);
+  .resource-info a {
+    color: var(--detail-text);
   }
 
-  .section-title {
-    margin: 0 0 8px;
-    color: var(--text-main);
-    font-size: 0.96rem;
-    font-weight: 700;
+  .resource-info a:hover,
+  .resource-info .telegram-link {
+    color: var(--detail-blue);
   }
 
-  .section-heading-inline {
-    display: flex;
-    align-items: center;
+  .telegram-link {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .section-heading {
     justify-content: space-between;
-    gap: 14px;
-    margin-bottom: 10px;
+    gap: 16px;
   }
 
-  .section-heading-inline .section-title {
-    margin-bottom: 0;
-  }
-
-  .section-heading-inline a {
+  .section-heading > a {
     flex: 0 0 auto;
-    color: var(--accent-strong);
-    font-size: 0.84rem;
-    font-weight: 650;
+    color: var(--detail-blue);
+    font-size: 0.8rem;
+    font-weight: 600;
   }
 
-  .detail-desc {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.7;
-    white-space: pre-wrap;
-  }
-
-  .detail-desc p {
-    margin: 0;
-  }
-
-  .empty-desc {
-    color: var(--text-muted);
-  }
-
-  .link-row {
+  .related-item {
     min-width: 0;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--detail-border);
   }
 
-  .link-row span {
-    flex: 0 0 auto;
-    color: var(--text-muted);
-    font-size: 0.82rem;
-    font-weight: 650;
+  .related-item:last-child {
+    border-bottom: 0;
   }
 
-  .link-row a {
+  .related-item:hover {
+    background: var(--detail-soft);
+  }
+
+  .related-text {
     min-width: 0;
-    overflow: hidden;
-    color: var(--accent-strong);
-    font-size: 0.92rem;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .related-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .related-card,
-  .related-nav-link {
-    min-width: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 3px;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg-card);
-    transition: border-color 0.16s, background-color 0.16s, color 0.16s;
   }
 
-  .related-card:hover,
-  .related-nav-link:hover {
-    border-color: var(--accent);
-    background: var(--accent-light);
-  }
-
-  .related-card span,
-  .related-nav-link strong {
-    min-width: 0;
+  .related-text strong,
+  .related-text small {
     overflow: hidden;
-    color: var(--text-main);
-    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .related-text strong {
+    color: var(--detail-text);
+    font-size: 0.86rem;
+    font-weight: 650;
+  }
+
+  .related-text small {
+    color: var(--detail-subtle);
+    font-size: 0.75rem;
+  }
+
+  .related-arrow {
+    flex: 0 0 auto;
+    color: var(--detail-subtle);
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .empty-related {
+    padding: 20px;
+    color: var(--detail-subtle);
+    font-size: 0.84rem;
+  }
+
+  .resource-pagination {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  .pagination-link {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 17px 20px;
+    border-radius: 10px;
+  }
+
+  a.pagination-link:hover {
+    border-color: #cbd0d8;
+    background: var(--detail-soft);
+  }
+
+  .pagination-link > span {
+    color: var(--detail-subtle);
+    font-size: 0.75rem;
+  }
+
+  .pagination-link strong {
+    overflow: hidden;
+    color: var(--detail-text);
+    font-size: 0.88rem;
     font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .related-card small,
-  .related-nav-link span {
-    overflow: hidden;
-    color: var(--text-muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .pagination-next {
+    text-align: right;
   }
 
-  .related-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
+  .pagination-link.is-disabled {
+    background: transparent;
+    opacity: 0.64;
   }
 
   .copy-toast {
     position: fixed;
     left: 50%;
-    bottom: 30px;
+    bottom: 28px;
     z-index: 999;
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: 6px;
-    background: rgba(16, 185, 129, 0.95);
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 650;
+    border-radius: 8px;
+    background: #17212b;
+    color: #ffffff;
+    font-size: 0.86rem;
+    font-weight: 600;
     opacity: 0;
     pointer-events: none;
-    transform: translateX(-50%) translateY(12px);
-    transition: opacity 0.16s, transform 0.16s;
+    transform: translateX(-50%) translateY(10px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
   }
 
   .copy-toast.error {
-    border-color: rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.95);
+    background: #b42318;
   }
 
   .copy-toast.show {
@@ -867,118 +892,110 @@ const detailJsonLd = [
     transform: translateX(-50%) translateY(0);
   }
 
-  @media (max-width: 768px) {
-    .detail-topbar {
-      gap: 10px;
-      padding: 0 14px;
-    }
-
-    .detail-brand {
-      font-size: 0.96rem;
-    }
-
-    .detail-top-actions {
-      gap: 6px;
-    }
-
-    .detail-topnav {
-      gap: 4px;
-    }
-
-    .detail-topnav a {
-      min-height: 32px;
-      padding: 0 8px;
-      font-size: 0.8rem;
-    }
-
-    .detail-topnav a[href*="github.com"] {
-      display: none;
-    }
-
-    .detail-theme-btn {
-      width: 32px;
-      min-height: 32px;
-      flex-basis: 32px;
-    }
-
-    .detail-container {
-      padding: 16px 14px 40px;
-    }
-
-    .breadcrumb {
-      max-width: 100%;
-      margin-bottom: 10px;
-    }
-
-    .detail-panel {
-      padding: 16px;
-    }
-
-    .detail-header {
-      gap: 12px;
-      padding-bottom: 16px;
-    }
-
-    .resource-avatar {
-      width: 44px;
-      height: 44px;
-      flex-basis: 44px;
-    }
-
-    .detail-title {
-      font-size: 1.22rem;
-    }
-
-    .summary-list {
-      width: 100%;
-      display: grid;
+  @media (max-width: 900px) {
+    .detail-grid {
       grid-template-columns: 1fr;
     }
 
-    .summary-list div {
-      border-right: 0;
-      border-bottom: 1px solid var(--line);
+    .detail-sidebar {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+      gap: 16px;
     }
 
-    .summary-list div:last-child {
-      border-bottom: 0;
+    .sidebar-section + .sidebar-section {
+      margin-top: 0;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .detail-topbar {
+      min-height: 60px;
+      padding: 0 14px;
+    }
+
+    .detail-brand-mark {
+      width: 30px;
+      height: 30px;
+    }
+
+    .source-nav-link,
+    .category-nav-link {
+      display: none !important;
+    }
+
+    .detail-container {
+      padding: 18px 14px 40px;
+    }
+
+    .breadcrumb {
+      margin-bottom: 14px;
+    }
+
+    .resource-card {
+      padding: 22px 20px;
+    }
+
+    .resource-header {
+      gap: 14px;
+    }
+
+    .resource-avatar {
+      width: 60px;
+      height: 60px;
+      flex-basis: 60px;
+      border-radius: 10px;
+    }
+
+    .resource-avatar-fallback {
+      font-size: 1.25rem;
+    }
+
+    .resource-identity h1 {
+      font-size: 1.45rem;
+    }
+
+    .resource-copy {
+      margin-top: 24px;
+      padding-top: 22px;
     }
 
     .detail-actions {
       display: grid;
-      grid-template-columns: 1fr;
-    }
-
-    .resource-facts {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 24px;
+      padding-top: 22px;
     }
 
     .action-btn {
       width: 100%;
+      padding: 0 12px;
     }
 
-    .link-row {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .link-row a {
-      max-width: 100%;
-      text-align: left;
-      white-space: normal;
-      overflow-wrap: anywhere;
-    }
-
-    .section-heading-inline {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .related-list,
-    .related-nav {
+    .detail-sidebar {
       grid-template-columns: 1fr;
+    }
+
+    .resource-pagination {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .pagination-next {
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .detail-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .breadcrumb-current,
+    .breadcrumb span:nth-of-type(2) {
+      display: none;
     }
   }
 </style>

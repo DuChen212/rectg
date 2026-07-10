@@ -13,7 +13,7 @@ interface Props {
 const SITE_URL = 'https://www.rectg.com';
 const {
   title = 'rectg - Telegram 中文资源索引',
-  description = '收录 Telegram 中文频道、群组和机器人，支持分类浏览、关键词搜索、详情页和 Telegram 链接。',
+  description = '整理公开的 Telegram 中文频道和群组，支持分类浏览、关键词搜索、详情查看和 Telegram 链接。',
   canonicalPath = '/',
   ogType = 'website',
   robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
@@ -26,7 +26,7 @@ const defaultJsonLd = {
   '@id': `${SITE_URL}/#website`,
   name: 'rectg',
   url: `${SITE_URL}/`,
-  description: 'Telegram 中文频道与群组精选索引',
+  description: 'Telegram 中文频道与群组公开目录',
 };
 const structuredData = jsonLd
   ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd])
@@ -44,7 +44,7 @@ const jsonLdContent = JSON.stringify(structuredData.length === 1 ? structuredDat
   <title>{title}</title>
   <meta name="title" content={title} />
   <meta name="description" content={description} />
-  <meta name="keywords" content="Telegram, TG群组, TG频道, 电报群, 电报导航, telegram中文, telegram频道推荐, telegram群组大全, 电报机器人" />
+  <meta name="keywords" content="Telegram, TG群组, TG频道, 电报群, 电报导航, telegram中文, telegram频道, telegram群组" />
   <meta name="author" content="rectg" />
   <link rel="canonical" href={canonicalUrl} />
   <meta name="robots" content={robots} />
@@ -55,7 +55,6 @@ const jsonLdContent = JSON.stringify(structuredData.length === 1 ? structuredDat
   <meta property="og:site_name" content="rectg" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content="https://www.rectg.com/og-image.png" />
   <meta property="og:locale" content="zh_CN" />
 
   <!-- Twitter -->
@@ -63,10 +62,9 @@ const jsonLdContent = JSON.stringify(structuredData.length === 1 ? structuredDat
   <meta property="twitter:url" content={canonicalUrl} />
   <meta property="twitter:title" content={title} />
   <meta property="twitter:description" content={description} />
-  <meta property="twitter:image" content="https://www.rectg.com/og-image.png" />
 
   <link rel="icon" type="image/png" href="/favicon.png" />
-  <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
+  <meta name="theme-color" content="#f7f8fa" id="theme-color-meta" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt" />
 
@@ -86,6 +84,10 @@ const jsonLdContent = JSON.stringify(structuredData.length === 1 ? structuredDat
         } else {
           document.body.classList.remove('dark');
         }
+        document.getElementById('theme-color-meta')?.setAttribute(
+          'content',
+          document.body.classList.contains('dark') ? '#0e141b' : '#f7f8fa',
+        );
       } catch (e) {}
     })();
   </script>
@@ -95,6 +97,32 @@ const jsonLdContent = JSON.stringify(structuredData.length === 1 ? structuredDat
     </div>
   </noscript>
   <slot />
+  <script is:inline>
+    // Keep the browser chrome and theme control semantics in sync on every page.
+    (function() {
+      const syncThemeUi = () => {
+        const isDark = document.body.classList.contains('dark');
+        document.getElementById('theme-color-meta')?.setAttribute(
+          'content',
+          isDark ? '#0e141b' : '#f7f8fa',
+        );
+
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+          const label = isDark ? '切换到浅色主题' : '切换到深色主题';
+          themeToggle.setAttribute('aria-pressed', String(isDark));
+          themeToggle.setAttribute('aria-label', label);
+          themeToggle.setAttribute('title', label);
+        }
+      };
+
+      syncThemeUi();
+      new MutationObserver(syncThemeUi).observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+    })();
+  </script>
   <script src="../scripts/metrics.js"></script>
   <script>
     // Register Service Worker
